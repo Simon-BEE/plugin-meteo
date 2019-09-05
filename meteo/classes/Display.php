@@ -8,7 +8,7 @@ class Display extends WP_Widget
             'idDisplay', 
             'Display Weather',
             array('description' => 'Widget for weather'));
-            include_once plugin_dir_path( __FILE__ ).'Table.php';
+        include_once plugin_dir_path( __FILE__ ).'Table.php';
     }
 
     /**

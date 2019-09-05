@@ -12,6 +12,15 @@ class Table
     }
 
     /**
+     * Select weather related to date and city
+     */
+    public function selectByCity($city)
+    {
+        global $wpdb;
+        return $wpdb->get_results("SELECT * FROM ".$wpdb->prefix."weather WHERE city = '$city'");
+    }
+
+    /**
      * Verify if weather of the day and the city is not already in database
      */
     public function verifWeather()
@@ -24,8 +33,10 @@ class Table
         $token = $config->token;
         
         if (!$table) {
-            $url = "http://api.openweathermap.org/data/2.5/forecast?q=".$where."&mode=xml&appid=".$token."&units=metric";
-            $weather = simplexml_load_file($url);
+            //$request = "http://api.openweathermap.org/data/2.5/forecast?q=".$where."&mode=xml&appid=".$token."&units=metric";
+            $request = wp_remote_request("http://api.openweathermap.org/data/2.5/forecast?q=".$where."&mode=xml&appid=".$token."&units=metric", array('method' => 'GET'));
+            $body = wp_remote_retrieve_body($request);
+            $weather = simplexml_load_string($body);
             $wpdb->insert($wpdb->prefix."weather", array('city' => $where, 'content' => $weather->asXML(), 'created_at' => $now));
         }else{
             $weather = new SimpleXMLElement($table->content);

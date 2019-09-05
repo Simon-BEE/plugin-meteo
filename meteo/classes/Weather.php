@@ -5,9 +5,13 @@ class Weather
     public function __construct()
     {
         include_once plugin_dir_path( __FILE__ ).'Display.php';
+        include_once plugin_dir_path( __FILE__ ).'Chart.php';
         add_action('widgets_init',function(){register_widget('Display');});
+
         add_action('admin_menu',array($this,'declareAdmin'));
+
         add_action('mon_evenement', 'faire_ceci_chaque_heure');
+
         add_shortcode('meteo', array($this, 'meteo'));
     }
 
