@@ -10,14 +10,14 @@ class Weather
 
         add_action('admin_menu',array($this,'declareAdmin'));
 
-        add_action('mon_evenement', 'faire_ceci_chaque_heure');
+        add_action('cron_task', 'cron_content');
 
         add_shortcode('meteo', array($this, 'meteo'));
     }
 
-    public function faire_ceci_chaque_heure()
+    public function cron_content()
     {
-        //nothing for the moment
+        return (new Display())->newWeather();
     }
 
     /**
@@ -26,8 +26,8 @@ class Weather
     public static function install()
     {
         Weather::install_db();
-        if (! wp_next_scheduled ( 'mon_evenement' )) {
-            wp_schedule_event(time(), 'hourly', 'mon_evenement');
+        if (! wp_next_scheduled ( 'cron_task' )) {
+            wp_schedule_event(time(), 'daily', 'cron_task');
         }
     }
 
@@ -37,6 +37,7 @@ class Weather
     public static function uninstall()
     {
         Weather::uninstall_db();
+        wp_clear_scheduled_hook( 'cron_task' );
     }
 
     /**
@@ -46,7 +47,7 @@ class Weather
     {
         global $wpdb;
         $wpdb->query("CREATE TABLE IF NOT EXISTS ".$wpdb->prefix."weather (id int(11) AUTO_INCREMENT PRIMARY KEY, city varchar(255) NOT NULL, content LONGTEXT NOT NULL, created_at varchar(255) NOT NULL);");
-        $wpdb->query("CREATE TABLE IF NOT EXISTS ".$wpdb->prefix."weather_config (city varchar(255) NOT NULL, token varchar(255) NOT NULL);");
+        $wpdb->query("CREATE TABLE IF NOT EXISTS ".$wpdb->prefix."weather_config (city varchar(255) NOT NULL, token varchar(255) NOT NULL, view tinyint(1) NOT NULL default 0);");
 
         include_once plugin_dir_path(__FILE__).'../private.php';
         $wpdb->insert($wpdb->prefix."weather_config", array('city' => "Moulins,fr", 'token' => $token));
@@ -103,12 +104,22 @@ class Weather
         <input type='text' name='city' value='".$config->city."'> <br />
         <label>Changer la clé de sécurité ( /!\ )</label>
         <input type='text' name='token' value='".$config->token."'> <br />
+        <label>Changer l'apparence du widget</label>
+        <input type='number' name='view' min='1' max='3' value='".($config->view +1)."'> <br />
         <input type='submit'>
         </form>
         ";
 
-        if (!empty($_POST['city']) && !empty($_POST['token'])) {
-            $table->newConfig($_POST['city'], $_POST['token']);
+        if (!empty($_POST['city']) && !empty($_POST['token']) && !empty($_POST['view'])) {
+            if ($_POST['view'] == 1) {
+                $view = 0;
+            } elseif($_POST['view'] == 2) {
+                $view = 1;
+            } else {
+                $view = 2;
+            }
+            
+            $table->newConfig($_POST['city'], $_POST['token'], $view);
         }
     }
 }

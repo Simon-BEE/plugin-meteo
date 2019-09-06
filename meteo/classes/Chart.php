@@ -15,41 +15,64 @@ class Chart
     
     public function adminChart() {
         $weathers = (new Table())->selectByCity('Moulins,fr');
-        $i = 0;
         $dataPoints = [];
-        foreach ($weathers as $weather) {
-            $data[$i] = (new SimpleXMLElement($weather->content))->forecast->time[$i];
-            $i++;
-            $dataPoints = ["y" => round($data[$i]->temperature['value']), 'label' => round($data[$i]['from'])];
+        if ($weathers) {
+            foreach ($weathers as $weather) {
+                $datas[] = (new SimpleXMLElement($weather->content));
+                break;
+            }
+            foreach ($datas as $data) {
+                for ($i=0; $i < count($data->forecast->time); $i++) { 
+                    $weathersData[] = $data->forecast->time[$i];
+                }
+                
+            }
+            foreach ($weathersData as $weather) {
+                $value = round($weather->temperature['value']);
+                $dataPoints[] = ["y" => $value, 'label' => (array)$weather['from']];
+            }
+            echo $this->chartView($dataPoints);
+        }else{
+            echo "Aucune donnée pour Moulins";
         }
-        var_dump($dataPoints);
-        die();
-        echo $this->chartView($dataPoints);
+        
     }
 
     public function chartView($dataPoints)
     {
-        echo "<script>
-        window.onload = function () {
-        
-        var chart = new CanvasJS.Chart(\"chartContainer\", {
-            title: {
-                text: \"Push-ups Over a Week\"
-            },
-            axisY: {
-                title: \"Number of Push-ups\"
-            },
-            data: [{
-                type: \"line\",
-                dataPoints: <?php echo json_encode($dataPoints, JSON_NUMERIC_CHECK); ?>
-            }]
-        });
-        chart.render();
-        
-        }
-        </script>
-        <div id=\"chartContainer\" style=\"height: 370px; width: 100%;\"></div>
+        echo "
         <script src=\"https://canvasjs.com/assets/script/canvasjs.min.js\"></script>
+        <script>
+        window.onload = function () {
+
+            var chart = new CanvasJS.Chart(\"chartContainer\", {
+                title: {
+                    text: \"Moulins temperatures previsions\"
+                },
+                axisX: {
+                    title: \"Date\",
+                    suffix: \" \"
+                },
+                axisY: {
+                    title: \"Temperature\",
+                    suffix: \" °C\"
+                },
+                data: [{
+                    type: \"area\",
+                    markerSize: 0,
+                    xValueFormatString: \"#,##0 °C\",
+                    yValueFormatString: \"#,##0.000 mPa·s\",
+                    dataPoints: ".json_encode($dataPoints, JSON_NUMERIC_CHECK)."
+                }]
+            });
+            chart.render();
+            
+            }
+        </script>
+        <style>
+        #adminChartId{width:100vw;};
+        </style>
+        <div id=\"chartContainer\" style=\"height: 500px; width: 100%;\"></div>
         ";
     }
 }
